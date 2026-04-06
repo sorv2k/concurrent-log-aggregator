@@ -1,0 +1,62 @@
+version: '3.8'
+
+services:
+  postgres:
+    image: postgres:15-alpine
+    container_name: log-aggregator-postgres
+    environment:
+      POSTGRES_USER: loguser
+      POSTGRES_PASSWORD: logpass
+      POSTGRES_DB: logdb
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U loguser -d logdb"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - log-network
+
+  log-aggregator:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: log-aggregator-app
+    environment:
+      # Buffer configuration
+      BUFFER_SIZE: "1000"
+      FLUSH_INTERVAL_SEC: "5"
+      BATCH_THRESHOLD: "100"
+      
+      # Rate limiter configuration
+      RATE_LIMIT: "1000"
+      BURST_CAPACITY: "1500"
+      
+      # Database configuration
+      DATABASE_URL: "postgres://loguser:logpass@postgres:5432/logdb?sslmode=disable"
+      
+      # Metrics server configuration
+      METRICS_PORT: "8080"
+      
+      # Mock source configuration
+      NUM_SOURCES: "5"
+      EVENTS_PER_SOURCE: "10"
+    ports:
+      - "8080:8080"
+    depends_on:
+      postgres:
+        condition: service_healthy
+    restart: unless-stopped
+    networks:
+      - log-network
+
+volumes:
+  postgres_data:
+    driver: local
+
+networks:
+  log-network:
+    driver: bridge

@@ -1,0 +1,25 @@
+# Ignore git files
+.git
+.gitignore
+
+# Ignore documentation
+*.md
+README.md
+LICENSE
+
+# Ignore test files
+*_test.go
+
+# Ignore build artifacts
+log-aggregator
+*.exe
+
+# Ignore IDE files
+.idea
+.vscode
+
+# Ignore CI/CD files
+.github
+
+# Ignore environment files
+.env*
